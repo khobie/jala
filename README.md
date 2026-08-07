@@ -13,6 +13,7 @@ Mobile Money, and view reports.
 ## Documentation
 
 - [Setup walkthrough](docs/SETUP.md) — detailed install & run guide (Docker or local MySQL)
+- [Deploy to Render + MySQL](docs/DEPLOY_RENDER.md) — production hosting guide
 - [API reference](docs/API.md) — every endpoint, grouped by module
 - [ER diagram](docs/ER_DIAGRAM.md) — database schema + booking lifecycle (Mermaid)
 

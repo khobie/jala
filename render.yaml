@@ -1,0 +1,43 @@
+# Render blueprint — deploy from https://dashboard.render.com
+# Connect repo: https://github.com/khobie/jala
+
+services:
+  # Node.js REST API (connects to external MySQL)
+  - type: web
+    name: jala-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: SMS_PROVIDER
+        value: console
+      - key: DATABASE_URL
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: DB_SSL
+        value: "true"
+
+  # Optional: host the React frontend on Render (or keep Vercel)
+  - type: web
+    name: jala-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

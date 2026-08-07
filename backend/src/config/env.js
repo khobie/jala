@@ -4,7 +4,13 @@ dotenv.config();
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '5000', 10),
+  // Comma-separated allowed frontend origins (local + Vercel + Render static site).
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  get clientOrigins() {
+    const raw = this.clientUrl || '';
+    if (raw === '*') return true;
+    return raw.split(',').map((o) => o.trim()).filter(Boolean);
+  },
 
   db: {
     host: process.env.DB_HOST || 'localhost',

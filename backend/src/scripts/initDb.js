@@ -6,20 +6,22 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mysql from 'mysql2/promise';
-import env from '../config/env.js';
+import { getDbConfig, isCloudDatabase } from '../config/dbConfig.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.join(__dirname, '..', '..', 'db', 'schema.sql');
 
 async function run() {
+  if (isCloudDatabase()) {
+    console.log('DATABASE_URL detected — use npm run db:migrate for cloud MySQL instead.');
+    process.exit(1);
+  }
+
   const sql = fs.readFileSync(schemaPath, 'utf8');
 
   // Connect without selecting a database (schema.sql creates it).
   const conn = await mysql.createConnection({
-    host: env.db.host,
-    port: env.db.port,
-    user: env.db.user,
-    password: env.db.password,
+    ...getDbConfig({ includeDatabase: false }),
     multipleStatements: true,
   });
 

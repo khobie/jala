@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+// Local dev: Vite proxy (/api). Production (Vercel/Render): set VITE_API_URL to your Render API URL.
+const apiRoot = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiRoot ? `${apiRoot}/api` : '/api',
 });
 
 // Attach JWT from localStorage on every request.

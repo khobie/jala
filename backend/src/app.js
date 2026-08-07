@@ -15,7 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({ origin: env.clientUrl === '*' ? true : env.clientUrl.split(','), credentials: true }));
+app.use(cors({ origin: env.clientOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (env.nodeEnv !== 'test') app.use(morgan('dev'));
