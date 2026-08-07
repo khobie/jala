@@ -34,6 +34,16 @@ function parseDatabaseUrl(raw) {
   return { host, port, user, password, database };
 }
 
+function resolveDatabaseUrl() {
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) return null;
+  if (raw.startsWith('postgres://') || raw.startsWith('postgresql://')) {
+    console.error('⚠ DATABASE_URL is PostgreSQL — this app needs MySQL. Ignoring it.');
+    return null;
+  }
+  return raw;
+}
+
 function sslConfig() {
   return process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false };
 }
@@ -60,9 +70,10 @@ function fromIndividualVars({ includeDatabase = true } = {}) {
  * Invalid DATABASE_URL (e.g. postgres://) is ignored when DB_* vars are set.
  */
 export function getDbConfig({ includeDatabase = true } = {}) {
-  if (process.env.DATABASE_URL) {
+  const databaseUrl = resolveDatabaseUrl();
+  if (databaseUrl) {
     try {
-      const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+      const parsed = parseDatabaseUrl(databaseUrl);
       const config = {
         host: parsed.host,
         port: parsed.port,
@@ -102,9 +113,10 @@ export function isCloudDatabase() {
 
 /** Safe summary for logs / health checks (no secrets). */
 export function getDbTarget() {
-  if (process.env.DATABASE_URL) {
+  const databaseUrl = resolveDatabaseUrl();
+  if (databaseUrl) {
     try {
-      const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+      const parsed = parseDatabaseUrl(databaseUrl);
       return {
         source: 'DATABASE_URL',
         host: parsed.host,
@@ -116,6 +128,14 @@ export function getDbTarget() {
     } catch (err) {
       return { source: 'DATABASE_URL', error: err.message };
     }
+  }
+
+  if (process.env.DATABASE_URL?.trim().startsWith('postgres')) {
+    return {
+      source: 'DATABASE_URL (ignored — PostgreSQL)',
+      error: 'Replace DATABASE_URL on Render with the mysql:// URL from Aiven',
+      fix: 'Render → jala-api → Environment → edit DATABASE_URL',
+    };
   }
 
   if (process.env.DB_HOST) {
