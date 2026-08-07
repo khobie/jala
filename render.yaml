@@ -23,7 +23,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: CLIENT_URL
-        sync: false
+        value: "https://jala-coral.vercel.app,http://localhost:5173"
       - key: DB_SSL
         value: "true"
 

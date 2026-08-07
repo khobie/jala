@@ -14,18 +14,26 @@ async function checkDatabase() {
   } catch (err) {
     console.warn('⚠ Database connection failed:', err.message);
     console.warn('  The API is running, but auth and data routes will fail until MySQL is reachable.');
-    console.warn('  Check DATABASE_URL / DB_* on Render and that Aiven allows external connections.');
+    console.warn('  On Render, set DATABASE_URL (mysql://...) or DB_HOST/DB_USER/DB_PASSWORD/DB_NAME.');
   }
 }
 
-async function start() {
-  // Listen immediately so Render health checks and cold starts do not hang forever
-  // if the database host is slow or unreachable.
-  app.listen(env.port, () => {
-    console.log(`✓ Artisan API running at http://localhost:${env.port}`);
+function start() {
+  const server = app.listen(env.port, '0.0.0.0', () => {
+    console.log(`✓ Artisan API listening on port ${env.port}`);
     console.log(`  Environment: ${env.nodeEnv}`);
+    console.log(`  Health check: /api/health`);
     checkDatabase();
   });
+
+  server.on('error', (err) => {
+    console.error('✗ Failed to start server:', err.message);
+    process.exit(1);
+  });
 }
+
+process.on('unhandledRejection', (err) => {
+  console.error('✗ Unhandled rejection:', err);
+});
 
 start();
