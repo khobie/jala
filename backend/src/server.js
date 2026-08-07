@@ -1,5 +1,6 @@
 import app from './app.js';
 import env from './config/env.js';
+import { getDbTarget } from './config/dbConfig.js';
 import { testConnection } from './config/db.js';
 
 async function checkDatabase() {
@@ -19,6 +20,11 @@ async function checkDatabase() {
 }
 
 function start() {
+  const dbTarget = getDbTarget();
+  console.log(`  Database target: ${dbTarget.host}:${dbTarget.port}/${dbTarget.database} (${dbTarget.source})`);
+  if (dbTarget.warning) console.warn(`⚠ ${dbTarget.warning}`);
+  if (dbTarget.error) console.warn(`⚠ DATABASE_URL error: ${dbTarget.error}`);
+
   const server = app.listen(env.port, '0.0.0.0', () => {
     console.log(`✓ Artisan API listening on port ${env.port}`);
     console.log(`  Environment: ${env.nodeEnv}`);

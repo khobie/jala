@@ -83,3 +83,46 @@ export function getDbConfig({ includeDatabase = true } = {}) {
 export function isCloudDatabase() {
   return Boolean(process.env.DATABASE_URL || process.env.DB_HOST);
 }
+
+/** Safe summary for logs / health checks (no secrets). */
+export function getDbTarget() {
+  if (process.env.DATABASE_URL) {
+    try {
+      const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+      return {
+        source: 'DATABASE_URL',
+        host: parsed.host,
+        port: parsed.port,
+        database: parsed.database,
+        user: parsed.user,
+        ssl: process.env.DB_SSL !== 'false',
+      };
+    } catch (err) {
+      return { source: 'DATABASE_URL', error: err.message };
+    }
+  }
+
+  if (process.env.DB_HOST) {
+    return {
+      source: 'DB_* env vars',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '3306', 10),
+      database: process.env.DB_NAME || env.db.database,
+      user: process.env.DB_USER || env.db.user,
+      ssl: process.env.DB_SSL === 'true',
+    };
+  }
+
+  return {
+    source: 'local defaults',
+    host: env.db.host,
+    port: env.db.port,
+    database: env.db.database,
+    user: env.db.user,
+    ssl: false,
+    warning:
+      process.env.NODE_ENV === 'production'
+        ? 'Render has no cloud DB configured — set DATABASE_URL or DB_HOST/DB_USER/DB_PASSWORD/DB_NAME'
+        : undefined,
+  };
+}
