@@ -56,7 +56,8 @@ function fromIndividualVars({ includeDatabase = true } = {}) {
 
 /**
  * Build mysql2 pool options for local XAMPP or cloud MySQL (Render + Aiven).
- * Prefers DATABASE_URL; falls back to DB_HOST/DB_USER/... if URL is invalid.
+ * Prefers a valid DATABASE_URL; otherwise uses DB_HOST/DB_USER/...
+ * Invalid DATABASE_URL (e.g. postgres://) is ignored when DB_* vars are set.
  */
 export function getDbConfig({ includeDatabase = true } = {}) {
   if (process.env.DATABASE_URL) {
@@ -73,11 +74,26 @@ export function getDbConfig({ includeDatabase = true } = {}) {
       return config;
     } catch (err) {
       console.error('⚠ Invalid DATABASE_URL:', err.message);
-      console.error('  Fix the URL or use DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME instead.');
+      console.error('  Delete DATABASE_URL on Render or replace it with a mysql:// URL.');
+      if (hasIndividualDbVars()) {
+        console.error('  Using DB_HOST/DB_USER/... env vars instead.');
+        return fromIndividualVars({ includeDatabase });
+      }
     }
+  } else if (hasIndividualDbVars()) {
+    return fromIndividualVars({ includeDatabase });
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error('✗ No cloud database configured on Render.');
+    console.error('  Add DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME (and DB_SSL=true).');
   }
 
   return fromIndividualVars({ includeDatabase });
+}
+
+function hasIndividualDbVars() {
+  return Boolean(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);
 }
 
 export function isCloudDatabase() {
@@ -110,6 +126,14 @@ export function getDbTarget() {
       database: process.env.DB_NAME || env.db.database,
       user: process.env.DB_USER || env.db.user,
       ssl: process.env.DB_SSL === 'true',
+    };
+  }
+
+  if (process.env.DATABASE_URL) {
+    return {
+      source: 'DATABASE_URL',
+      error: 'Invalid DATABASE_URL — delete it on Render or use mysql://',
+      warning: 'App is falling back to localhost and will not work on Render',
     };
   }
 
